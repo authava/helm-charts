@@ -1,0 +1,34 @@
+apiVersion: v1
+entries:
+  authgate:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-05-17T20:15:50.316317941Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: ~16.7.4
+    - condition: redis.enabled
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: ~21.1.3
+    - condition: traefik.enabled
+      name: traefik
+      repository: https://helm.traefik.io/traefik
+      version: ~35.2.0
+    description: A Helm chart for AuthGate - a standalone Traefik forwardAuth middleware
+      for authentication and authorization
+    digest: 2ba469d5bb4f2989ae2832395d79be32d2a287d17ebb5711015530f9bf3a410d
+    home: https://github.com/authava/authgate
+    maintainers:
+    - name: Authava
+      url: https://github.com/authava
+    name: authgate
+    sources:
+    - https://github.com/authava/authgate
+    type: application
+    urls:
+    - https://authava.github.io/helm-charts/authgate-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-05-17T20:15:50.295815326Z"
