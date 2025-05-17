@@ -1,0 +1,41 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Release.Name }}-authgate
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  forwardAuth:
+    address: http://{{ .Release.Name }}-authgate.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.authgate.service.port }}/auth
+    trustForwardHeader: true
+    authResponseHeaders:
+      - "X-Auth-User-Id"
+      - "X-Auth-User-Email"
+      - "X-Auth-User-Roles"
+      - "X-Auth-User-Permissions"
+---
+# HTTP to HTTPS redirect middleware
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Release.Name }}-redirect-https
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+# Add trailing slash middleware
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Release.Name }}-add-trailing-slash
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  addPrefix:
+    prefix: /

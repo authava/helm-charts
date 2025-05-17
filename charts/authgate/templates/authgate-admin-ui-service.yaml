@@ -1,0 +1,21 @@
+{{- if .Values.authgateAdminUi.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-authgate-admin-ui
+  labels:
+    app.kubernetes.io/name: authgate-admin-ui
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: admin-ui
+spec:
+  type: {{ .Values.authgateAdminUi.service.type }}
+  ports:
+    - port: {{ .Values.authgateAdminUi.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: authgate-admin-ui
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: admin-ui
+{{- end }}

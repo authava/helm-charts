@@ -1,0 +1,64 @@
+{{- if .Values.authgateAdminUi.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-authgate-admin-ui
+  labels:
+    app.kubernetes.io/name: authgate-admin-ui
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: admin-ui
+spec:
+  replicas: {{ .Values.authgateAdminUi.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authgate-admin-ui
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authgate-admin-ui
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: admin-ui
+      {{- with .Values.authgateAdminUi.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: authgate-admin-ui
+          image: "{{ .Values.authgateAdminUi.image.repository }}:{{ .Values.authgateAdminUi.image.tag }}"
+          imagePullPolicy: {{ .Values.authgateAdminUi.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: VITE_API_URL
+              value: "{{ .Values.authgateAdminUi.config.apiUrl }}"
+          resources:
+            {{- toYaml .Values.authgateAdminUi.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      {{- with .Values.authgateAdminUi.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.authgateAdminUi.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.authgateAdminUi.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-authgate
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: authgate
+spec:
+  type: {{ .Values.authgate.service.type }}
+  ports:
+    - port: {{ .Values.authgate.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: authgate

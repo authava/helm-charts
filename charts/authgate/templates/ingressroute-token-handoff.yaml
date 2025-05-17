@@ -1,0 +1,24 @@
+{{- if and .Values.traefik.enabled .Values.tokenHandoff.enabled -}}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ .Release.Name }}-token-handoff
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{ index .Values.ingress.hosts 0 "host" | default "admin.yourdomain.com" }}`) && PathPrefix(`/auth`)
+      kind: Rule
+      services:
+        - name: {{ .Release.Name }}-token-handoff
+          port: {{ .Values.tokenHandoff.service.port }}
+  tls:
+    {{- if .Values.ingress.tls }}
+    secretName: {{ index .Values.ingress.tls 0 "secretName" | default "admin-tls" }}
+    {{- else }}
+    certResolver: letsencrypt
+    {{- end }}
+{{- end }}

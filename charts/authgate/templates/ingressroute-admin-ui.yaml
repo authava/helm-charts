@@ -1,0 +1,31 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ .Release.Name }}-authgate-admin-ui
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    meta.helm.sh/release-name: authgate
+    meta.helm.sh/release-namespace: authava
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`{{ index .Values.ingress.hosts 0 "host" | default "admin.yourdomain.com" }}`)
+      kind: Rule
+      services:
+        - name: {{ .Release.Name }}-authgate-admin-ui
+          port: {{ .Values.authgateAdminUi.service.port }}
+      middlewares:
+        - name: {{ .Release.Name }}-authgate
+  tls:
+    {{- if .Values.ingress.tls }}
+    secretName: {{ index .Values.ingress.tls 0 "secretName" | default "admin-tls" }}
+    {{- else }}
+    certResolver: letsencrypt
+    {{- end }}

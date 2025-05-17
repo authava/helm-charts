@@ -1,0 +1,4 @@
+*.tgz
+charts/*/charts/
+index.yaml
+.cr-release-packages/

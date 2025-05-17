@@ -1,0 +1,50 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+{{- if .Values.ingress.enabled }}
+You can access the AuthGate Admin UI at:
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }}
+{{- end }}
+
+{{- else if contains "NodePort" .Values.authgateAdminUi.service.type }}
+You can access the AuthGate Admin UI by running these commands:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ .Release.Name }}-authgate-admin-ui)
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+
+{{- else if contains "LoadBalancer" .Values.authgateAdminUi.service.type }}
+You can access the AuthGate Admin UI by running these commands:
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ .Release.Name }}-authgate-admin-ui --template "{{ "{{ range (index .status.loadBalancer.ingress 0) }}{{ . }}{{ end }}" }}")
+  echo http://$SERVICE_IP:{{ .Values.authgateAdminUi.service.port }}
+
+{{- else if contains "ClusterIP" .Values.authgateAdminUi.service.type }}
+You can access the AuthGate Admin UI by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name=authgate-admin-ui,app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:80
+  echo "Visit http://127.0.0.1:8080 to access the AuthGate Admin UI"
+{{- end }}
+
+{{- if .Values.postgresql.enabled }}
+PostgreSQL can be accessed via port 5432 on the following DNS name from within your cluster:
+    {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local
+
+To get the password for "{{ .Values.postgresql.auth.username }}" run:
+    kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }}-postgresql -o jsonpath="{.data.password}" | base64 --decode
+{{- end }}
+
+{{- if .Values.redis.enabled }}
+Redis can be accessed via port 6379 on the following DNS name from within your cluster:
+    {{ .Release.Name }}-redis-master.{{ .Release.Namespace }}.svc.cluster.local
+
+{{- if .Values.redis.auth.enabled }}
+To get the password for Redis run:
+    kubectl get secret --namespace {{ .Release.Namespace }} {{ .Release.Name }}-redis -o jsonpath="{.data.redis-password}" | base64 --decode
+{{- end }}
+{{- end }}

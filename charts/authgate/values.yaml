@@ -1,0 +1,269 @@
+# Default values for authgate
+# This is a YAML-formatted file.
+
+# AuthGate main service configuration
+authgate:
+  image:
+    repository: authava/authgate
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  config:
+    port: 4181
+    logLevel: "info"
+
+    # Admin API configuration
+    adminApi:
+      enabled: true
+      token: ""  # Set a secure token for API access
+      sessionRoles: "admin,superuser"
+
+    # Session configuration
+    sessionCookie: "session"
+
+    # Configuration backend (json or postgres)
+    configBackend: "postgres"
+    configPath: "/app/authgate.json"
+
+    # Cache configuration
+    cache:
+      enabled: true
+      backend: "redis"  # or "memory"
+
+    # Bootstrap route configuration
+    bootstrap:
+      routeHost: "admin.localhost"
+      routePath: "/admin/*"
+      routeRoles: "admin"
+      sessionUrl: "https://auth.yourdomain.com/session"
+      loginRedirect: "https://auth.yourdomain.com/login"
+      cookieName: "session"
+      callbackDomain: "https://admin.localhost"
+
+  # Custom configuration file (authgate.json)
+  customConfig:
+    enabled: false
+    # configMap: "my-authgate-config"  # Name of the ConfigMap containing authgate.json
+
+  service:
+    type: ClusterIP
+    port: 4181
+
+  # Pod security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
+  # Pod annotations
+  podAnnotations: {}
+
+  # Node selector
+  nodeSelector: {}
+
+  # Tolerations
+  tolerations: []
+
+  # Affinity
+  affinity: {}
+
+# AuthGate Admin UI configuration
+authgateAdminUi:
+  enabled: true
+
+  image:
+    repository: authava/authgate-admin-ui
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  config:
+    apiUrl: "https://admin.yourdomain.com/admin"
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  # Pod security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
+  # Pod annotations
+  podAnnotations: {}
+
+  # Node selector
+  nodeSelector: {}
+
+  # Tolerations
+  tolerations: []
+
+  # Affinity
+  affinity: {}
+
+# Token Handoff service configuration
+tokenHandoff:
+  enabled: true
+
+  image:
+    repository: authava/token-handoff
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+  config:
+    port: "3000"
+    cookieName: "session"
+    cookieDomain: "yourdomain.com"
+    cookiePath: "/"
+    defaultRedirect: "https://admin.yourdomain.com"
+    defaultToken: ""  # Set a secure token
+    secureCookie: true
+    httpOnly: true
+
+  service:
+    type: ClusterIP
+    port: 3000
+
+  # Pod security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+
+  # Pod annotations
+  podAnnotations: {}
+
+  # Node selector
+  nodeSelector: {}
+
+  # Tolerations
+  tolerations: []
+
+  # Affinity
+  affinity: {}
+
+# PostgreSQL configuration (using Bitnami chart)
+postgresql:
+  enabled: true
+
+  auth:
+    username: "authgate"
+    password: ""  # Set a secure password
+    database: "authgate"
+
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+      # storageClass: ""
+
+  # For production, consider setting up replication
+  architecture: standalone
+
+# Redis configuration (using Bitnami chart)
+redis:
+  enabled: true
+
+  architecture: standalone
+
+  auth:
+    enabled: true
+    password: ""  # Set a secure password
+
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      # storageClass: ""
+
+# Traefik configuration (using Bitnami chart)
+traefik:
+  enabled: true
+
+  # Additional Traefik arguments
+  additionalArguments:
+    - "--api.dashboard=true"
+    - "--providers.kubernetesingress.ingressclass=traefik"
+    - "--providers.kubernetescrd=true"
+    - "--providers.kubernetescrd.allowCrossNamespace=true"
+    - "--entrypoints.web.address=:80"
+    - "--entrypoints.websecure.address=:443"
+    - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+    - "--certificatesresolvers.letsencrypt.acme.email=admin@yourdomain.com"
+    - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+    - "--serversTransport.insecureSkipVerify=true"
+
+  # Persistence for Let's Encrypt certificates
+  persistence:
+    enabled: true
+    path: /data
+    size: 128Mi
+
+  # Service configuration
+  service:
+    type: LoadBalancer
+    ports:
+      web:
+        port: 80
+      websecure:
+        port: 443
+
+  # Install Traefik CRDs
+  ingressRoute:
+    dashboard:
+      enabled: true
+
+# Ingress/IngressRoute configuration
+ingress:
+  enabled: true
+
+  # Host configuration for IngressRoute
+  hosts:
+    - host: admin.yourdomain.com
+
+  # TLS configuration for IngressRoute
+  tls:
+    - secretName: admin-tls
+      hosts:
+        - admin.yourdomain.com
+
+  # Legacy Kubernetes Ingress (only used if traefik.enabled is false)
+  kubernetes:
+    enabled: false
+    annotations:
+      kubernetes.io/ingress.class: traefik
+      traefik.ingress.kubernetes.io/router.middlewares: default-authgate@kubernetescrd
+
+    paths:
+      - path: /
+        pathType: Prefix

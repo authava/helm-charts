@@ -1,0 +1,87 @@
+{{- if .Values.tokenHandoff.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-token-handoff
+  labels:
+    app.kubernetes.io/name: token-handoff
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: token-handoff
+spec:
+  replicas: {{ .Values.tokenHandoff.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: token-handoff
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: token-handoff
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: token-handoff
+      {{- with .Values.tokenHandoff.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.tokenHandoff.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: token-handoff
+          image: "{{ .Values.tokenHandoff.image.repository }}:{{ .Values.tokenHandoff.image.tag }}"
+          imagePullPolicy: {{ .Values.tokenHandoff.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.tokenHandoff.config.port }}
+              protocol: TCP
+          env:
+            - name: TOKEN_HANDOFF_PORT
+              value: "{{ .Values.tokenHandoff.config.port }}"
+            - name: TOKEN_HANDOFF_COOKIE_NAME
+              value: "{{ .Values.tokenHandoff.config.cookieName }}"
+            - name: TOKEN_HANDOFF_COOKIE_DOMAIN
+              value: "{{ .Values.tokenHandoff.config.cookieDomain }}"
+            - name: TOKEN_HANDOFF_COOKIE_PATH
+              value: "{{ .Values.tokenHandoff.config.cookiePath }}"
+            - name: TOKEN_HANDOFF_DEFAULT_REDIRECT
+              value: "{{ .Values.tokenHandoff.config.defaultRedirect }}"
+            {{- if .Values.tokenHandoff.config.defaultToken }}
+            - name: TOKEN_HANDOFF_DEFAULT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-authgate-secrets
+                  key: token-handoff-token
+            {{- end }}
+            - name: TOKEN_HANDOFF_SECURE_COOKIE
+              value: "{{ .Values.tokenHandoff.config.secureCookie }}"
+            - name: TOKEN_HANDOFF_HTTP_ONLY
+              value: "{{ .Values.tokenHandoff.config.httpOnly }}"
+          resources:
+            {{- toYaml .Values.tokenHandoff.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      {{- with .Values.tokenHandoff.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tokenHandoff.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tokenHandoff.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

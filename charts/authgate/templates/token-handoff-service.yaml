@@ -1,0 +1,21 @@
+{{- if .Values.tokenHandoff.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-token-handoff
+  labels:
+    app.kubernetes.io/name: token-handoff
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: token-handoff
+spec:
+  type: {{ .Values.tokenHandoff.service.type }}
+  ports:
+    - port: {{ .Values.tokenHandoff.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: token-handoff
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: token-handoff
+{{- end }}

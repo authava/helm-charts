@@ -1,0 +1,21 @@
+{{- if .Values.traefik.enabled -}}
+# HTTP to HTTPS redirect
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ .Release.Name }}-http-redirect
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`{{ index .Values.ingress.hosts 0 "host" | default "admin.yourdomain.com" }}`)
+      kind: Rule
+      middlewares:
+        - name: {{ .Release.Name }}-redirect-https
+      services:
+        - name: {{ .Release.Name }}-authgate-admin-ui
+          port: {{ .Values.authgateAdminUi.service.port }}
+{{- end }}

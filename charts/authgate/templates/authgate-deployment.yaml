@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-authgate
+  labels:
+    app.kubernetes.io/name: authgate
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: authgate
+spec:
+  replicas: {{ .Values.authgate.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authgate
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authgate
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: authgate
+      {{- with .Values.authgate.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      containers:
+        - name: authgate
+          image: "{{ .Values.authgate.image.repository }}:{{ .Values.authgate.image.tag }}"
+          imagePullPolicy: {{ .Values.authgate.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.authgate.config.port }}
+              protocol: TCP
+{{- if .Values.authgate.envFromSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.authgate.envFromSecret }}
+{{- else }}
+          env:
+            - name: PORT
+              value: "{{ .Values.authgate.config.port }}"
+            - name: RUST_LOG
+              value: "{{ .Values.authgate.config.logLevel }}"
+            - name: AUTHGATE_CONFIG_BACKEND
+              value: "{{ .Values.authgate.config.configBackend }}"
+            {{- if eq .Values.authgate.config.configBackend "postgres" }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-authgate-secrets
+                  key: database-url
+            {{- end }}
+            - name: AUTHGATE_ENABLE_ADMIN_API
+              value: "{{ .Values.authgate.config.adminApi.enabled }}"
+            {{- if .Values.authgate.config.adminApi.token }}
+            - name: AUTHGATE_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-authgate-secrets
+                  key: admin-token
+            {{- end }}
+            - name: AUTHGATE_SESSION_COOKIE
+              value: "{{ .Values.authgate.config.sessionCookie }}"
+            - name: AUTHGATE_ADMIN_SESSION_ROLES
+              value: "{{ .Values.authgate.config.adminApi.sessionRoles }}"
+            - name: AUTHGATE_CONFIG
+              value: "{{ .Values.authgate.config.configPath }}"
+            - name: AUTHGATE_BOOTSTRAP_ROUTE_HOST
+              value: "{{ .Values.authgate.config.bootstrap.routeHost }}"
+            - name: AUTHGATE_BOOTSTRAP_ROUTE_PATH
+              value: "{{ .Values.authgate.config.bootstrap.routePath }}"
+            - name: AUTHGATE_BOOTSTRAP_ROUTE_ROLES
+              value: "{{ .Values.authgate.config.bootstrap.routeRoles }}"
+            - name: AUTHGATE_BOOTSTRAP_SESSION_URL
+              value: "{{ .Values.authgate.config.bootstrap.sessionUrl }}"
+            - name: AUTHGATE_BOOTSTRAP_LOGIN_REDIRECT
+              value: "{{ .Values.authgate.config.bootstrap.loginRedirect }}"
+            - name: AUTHGATE_BOOTSTRAP_COOKIE_NAME
+              value: "{{ .Values.authgate.config.bootstrap.cookieName }}"
+            - name: AUTHGATE_CALLBACK_DOMAIN
+              value: "{{ .Values.authgate.config.bootstrap.callbackDomain }}"
+            - name: AUTHGATE_CACHE_ENABLED
+              value: "{{ .Values.authgate.config.cache.enabled }}"
+            - name: AUTHGATE_CACHE_BACKEND
+              value: "{{ .Values.authgate.config.cache.backend }}"
+            {{- if and .Values.authgate.config.cache.enabled (eq .Values.authgate.config.cache.backend "redis") .Values.redis.enabled }}
+            - name: AUTHGATE_REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-authgate-secrets
+                  key: redis-url
+            {{- end }}
+{{- end }}
+          {{- if .Values.authgate.customConfig.enabled }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/authgate.json
+              subPath: authgate.json
+          {{- end }}
+          resources:
+            {{- toYaml .Values.authgate.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      {{- if .Values.authgate.customConfig.enabled }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ .Values.authgate.customConfig.configMap }}
+      {{- end }}
+      {{- with .Values.authgate.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.authgate.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.authgate.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
