@@ -3,7 +3,7 @@ entries:
   authgate:
   - apiVersion: v2
     appVersion: 1.0.0
-    created: "2025-08-06T13:30:09.005557044Z"
+    created: "2025-08-06T14:15:03.221335615Z"
     dependencies:
     - condition: postgresql.enabled
       name: postgresql
@@ -19,7 +19,7 @@ entries:
       version: ~35.2.0
     description: A Helm chart for AuthGate - a standalone Traefik forwardAuth middleware
       for authentication and authorization
-    digest: 45d4935edba0a30d2be9934c40607a358708a1b4c46e0b00e1a2656c1abcbba6
+    digest: 2ba9892d332c5d803b3ec339d601dd2449fed606980147bcbeb35bb8cf1f4ed9
     home: https://github.com/authava/authgate
     maintainers:
     - name: Authava
@@ -29,6 +29,6 @@ entries:
     - https://github.com/authava/authgate
     type: application
     urls:
-    - https://authava.github.io/helm-charts/authgate-0.1.6.tgz
-    version: 0.1.6
-generated: "2025-08-06T13:30:08.985180413Z"
+    - https://authava.github.io/helm-charts/authgate-0.1.7.tgz
+    version: 0.1.7
+generated: "2025-08-06T14:15:03.200879097Z"
