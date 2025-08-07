@@ -2,7 +2,7 @@ apiVersion: v2
 name: authgate
 description: A Helm chart for AuthGate - a standalone Traefik forwardAuth middleware for authentication and authorization
 type: application
-version: 0.1.10
+version: 0.1.11
 appVersion: "1.0.0"
 home: https://github.com/authava/authgate
 sources:
